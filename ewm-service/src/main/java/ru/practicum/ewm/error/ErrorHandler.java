@@ -118,18 +118,6 @@ public class ErrorHandler {
                 .build();
     }
 
-    @ExceptionHandler({RuntimeException.class})
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiError handleNotFoundException(RuntimeException e) {
-        log.error("Not found: {}", e.getMessage(), e);
-        return ApiError.builder()
-                .errors(List.of(e.getMessage()))
-                .message(e.getMessage())
-                .reason("The required object was not found.")
-                .status("NOT_FOUND")
-                .timestamp(LocalDateTime.now())
-                .build();
-    }
 
     @ExceptionHandler({Exception.class})
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

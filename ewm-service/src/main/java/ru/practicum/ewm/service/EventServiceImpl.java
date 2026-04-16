@@ -47,10 +47,11 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = eventRepository.findAllForAdmin(users, states, categories, rangeStart, rangeEnd, pageable);
         Map<Long, Long> viewsMap = getViewsForEvents(events);
+        Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEvents(events);
 
         return events.stream()
                 .map(event -> {
-                    Long confirmedRequests = requestRepository.countByEventAndStatus(event, RequestStatus.CONFIRMED);
+                    Long confirmedRequests = confirmedMap.getOrDefault(event.getId(), 0L);
                     Long views = viewsMap.getOrDefault(event.getId(), 0L);
                     return EventMapper.toEventFullDto(event, confirmedRequests, views);
                 })
@@ -103,10 +104,11 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(from / size, size);
         List<Event> events = eventRepository.findByInitiator(user, pageable);
         Map<Long, Long> viewsMap = getViewsForEvents(events);
+        Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEvents(events);
 
         return events.stream()
                 .map(event -> {
-                    Long confirmedRequests = requestRepository.countByEventAndStatus(event, RequestStatus.CONFIRMED);
+                    Long confirmedRequests = confirmedMap.getOrDefault(event.getId(), 0L);
                     Long views = viewsMap.getOrDefault(event.getId(), 0L);
                     return EventMapper.toEventShortDto(event, confirmedRequests, views);
                 })
@@ -205,24 +207,26 @@ public class EventServiceImpl implements EventService {
                 text, categories, paid, rangeStart, rangeEnd, pageable);
 
         Map<Long, Long> viewsMap = getViewsForEvents(events);
+        Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEvents(events);
 
         List<EventShortDto> result = events.stream()
                 .map(event -> {
-                    Long confirmedRequests = requestRepository.countByEventAndStatus(event, RequestStatus.CONFIRMED);
+                    Long confirmedRequests = confirmedMap.getOrDefault(event.getId(), 0L);
                     Long views = viewsMap.getOrDefault(event.getId(), 0L);
                     return EventMapper.toEventShortDto(event, confirmedRequests, views);
                 })
                 .collect(Collectors.toList());
 
         if (onlyAvailable != null && onlyAvailable) {
+            Map<Long, Long> finalConfirmedMap = confirmedMap;
             result = result.stream()
                     .filter(dto -> {
+                        Long confirmed = finalConfirmedMap.getOrDefault(dto.getId(), 0L);
                         Event event = events.stream()
                                 .filter(e -> e.getId().equals(dto.getId()))
                                 .findFirst()
                                 .orElse(null);
                         if (event == null) return false;
-                        Long confirmed = requestRepository.countByEventAndStatus(event, RequestStatus.CONFIRMED);
                         return event.getParticipantLimit() == 0 || confirmed < event.getParticipantLimit();
                     })
                     .collect(Collectors.toList());
