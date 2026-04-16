@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import ru.practicum.ewm.error.NotFoundException;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.CategoryDto;
 import ru.practicum.ewm.dto.NewCategoryDto;
@@ -35,7 +36,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryDto getCategoryById(Long catId) {
         Category category = categoryRepository.findById(catId)
-                .orElseThrow(() -> new RuntimeException("Категория с id " + catId + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
         return CategoryMapper.toCategoryDto(category);
     }
 
@@ -53,7 +54,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryDto updateCategory(Long catId, CategoryDto categoryDto) {
         log.info("Updating category with id: {}", catId);
         Category category = categoryRepository.findById(catId)
-                .orElseThrow(() -> new RuntimeException("Категория с id " + catId + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Категория с id " + catId + " не найдена"));
         category.setName(categoryDto.getName());
         category = categoryRepository.save(category);
         return CategoryMapper.toCategoryDto(category);

@@ -92,6 +92,32 @@ public class ErrorHandler {
                 .build();
     }
 
+    @ExceptionHandler({NotFoundException.class})
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleNotFoundException(NotFoundException e) {
+        log.error("Not found: {}", e.getMessage(), e);
+        return ApiError.builder()
+                .errors(List.of(e.getMessage()))
+                .message(e.getMessage())
+                .reason("The required object was not found.")
+                .status("NOT_FOUND")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    @ExceptionHandler({ForbiddenException.class})
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ApiError handleForbiddenException(ForbiddenException e) {
+        log.error("Forbidden: {}", e.getMessage(), e);
+        return ApiError.builder()
+                .errors(List.of(e.getMessage()))
+                .message(e.getMessage())
+                .reason("Access denied.")
+                .status("FORBIDDEN")
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
     @ExceptionHandler({RuntimeException.class})
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleNotFoundException(RuntimeException e) {

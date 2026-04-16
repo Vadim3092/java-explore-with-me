@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import ru.practicum.ewm.error.NotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.CompilationDto;
@@ -67,7 +68,7 @@ public class CompilationServiceImpl implements CompilationService {
     @Override
     public CompilationDto getCompilationById(Long compId) {
         Compilation compilation = compilationRepository.findById(compId)
-                .orElseThrow(() -> new RuntimeException("Подборка с id " + compId + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Подборка с id " + compId + " не найдена"));
 
         List<Event> events = compilation.getEvents();
         Map<Long, Long> confirmedMap = requestRepository.countConfirmedByEvents(events);
@@ -103,7 +104,7 @@ public class CompilationServiceImpl implements CompilationService {
         log.info("Updating compilation with id: {}", compId);
 
         Compilation compilation = compilationRepository.findById(compId)
-                .orElseThrow(() -> new RuntimeException("Подборка с id " + compId + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Подборка с id " + compId + " не найдена"));
 
         if (updateRequest.getPinned() != null) {
             compilation.setPinned(updateRequest.getPinned());

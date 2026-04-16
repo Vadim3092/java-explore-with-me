@@ -8,6 +8,8 @@ import ru.practicum.ewm.dto.EventRequestStatusUpdateRequest;
 import ru.practicum.ewm.dto.EventRequestStatusUpdateResult;
 import ru.practicum.ewm.dto.ParticipationRequestDto;
 import ru.practicum.ewm.error.ConflictException;
+import ru.practicum.ewm.error.ForbiddenException;
+import ru.practicum.ewm.error.NotFoundException;
 import ru.practicum.ewm.mapper.ParticipationRequestMapper;
 import ru.practicum.ewm.model.*;
 import ru.practicum.ewm.repository.EventRepository;
@@ -85,10 +87,10 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
     public ParticipationRequestDto cancelRequest(Long userId, Long requestId) {
         getUserOrThrow(userId);
         ParticipationRequest request = requestRepository.findById(requestId)
-                .orElseThrow(() -> new RuntimeException("Заявка с id " + requestId + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Заявка с id " + requestId + " не найдена"));
 
         if (!request.getRequester().getId().equals(userId)) {
-            throw new RuntimeException("Доступ запрещён");
+            throw new ForbiddenException("Доступ запрещён");
         }
 
         request.setStatus(RequestStatus.CANCELED);
@@ -104,7 +106,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         Event event = getEventOrThrow(eventId);
 
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new RuntimeException("Доступ запрещён");
+            throw new ForbiddenException("Доступ запрещён");
         }
 
         if (event.getParticipantLimit() == 0 || !event.getRequestModeration()) {
@@ -172,7 +174,7 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
         Event event = getEventOrThrow(eventId);
 
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new RuntimeException("Доступ запрещён");
+            throw new ForbiddenException("Доступ запрещён");
         }
 
         return requestRepository.findByEvent(event).stream()
@@ -182,11 +184,11 @@ public class ParticipationRequestServiceImpl implements ParticipationRequestServ
 
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь с id " + userId + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
     }
 
     private Event getEventOrThrow(Long eventId) {
         return eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Событие с id " + eventId + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
     }
 }

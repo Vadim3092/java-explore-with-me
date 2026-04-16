@@ -10,6 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.dto.*;
 import ru.practicum.ewm.error.ConflictException;
 import ru.practicum.ewm.error.EventDateValidationException;
+import ru.practicum.ewm.error.ForbiddenException;
+import ru.practicum.ewm.error.NotFoundException;
 import ru.practicum.ewm.mapper.EventMapper;
 import ru.practicum.ewm.mapper.LocationMapper;
 import ru.practicum.ewm.model.*;
@@ -134,7 +136,7 @@ public class EventServiceImpl implements EventService {
         getUserOrThrow(userId);
         Event event = getEventOrThrow(eventId);
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new RuntimeException("Доступ запрещён");
+            throw new ForbiddenException("Доступ запрещён");
         }
         Long confirmedRequests = requestRepository.countByEventAndStatus(event, RequestStatus.CONFIRMED);
         Long views = getViewsForEvent(event.getId());
@@ -148,7 +150,7 @@ public class EventServiceImpl implements EventService {
         Event event = getEventOrThrow(eventId);
 
         if (!event.getInitiator().getId().equals(userId)) {
-            throw new RuntimeException("Доступ запрещён");
+            throw new ForbiddenException("Доступ запрещён");
         }
 
         if (event.getState() == EventState.PUBLISHED) {
@@ -238,10 +240,10 @@ public class EventServiceImpl implements EventService {
     @Override
     public EventFullDto getEventPublic(Long id, HttpServletRequest request) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Событие с id " + id + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Событие с id " + id + " не найдено"));
 
         if (event.getState() != EventState.PUBLISHED) {
-            throw new RuntimeException("Событие не найдено");
+            throw new NotFoundException("Событие не найдено");
         }
 
         Long views = getViewsForEvent(id);
@@ -318,17 +320,17 @@ public class EventServiceImpl implements EventService {
 
     private User getUserOrThrow(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Пользователь с id " + userId + " не найден"));
+                .orElseThrow(() -> new NotFoundException("Пользователь с id " + userId + " не найден"));
     }
 
     private Category getCategoryOrThrow(Long categoryId) {
         return categoryRepository.findById(categoryId)
-                .orElseThrow(() -> new RuntimeException("Категория с id " + categoryId + " не найдена"));
+                .orElseThrow(() -> new NotFoundException("Категория с id " + categoryId + " не найдена"));
     }
 
     private Event getEventOrThrow(Long eventId) {
         return eventRepository.findById(eventId)
-                .orElseThrow(() -> new RuntimeException("Событие с id " + eventId + " не найдено"));
+                .orElseThrow(() -> new NotFoundException("Событие с id " + eventId + " не найдено"));
     }
 
     private void updateEventFields(Event event, String annotation, Long categoryId, String description,
