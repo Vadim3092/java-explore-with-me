@@ -35,10 +35,8 @@ public class StatsClient {
         HttpEntity<EndpointHit> requestEntity = new HttpEntity<>(hit, headers);
 
         try {
-            ResponseEntity<Void> response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
-            if (response.getStatusCode().is2xxSuccessful()) {
-                log.debug("Хит сохранён: {}", hit);
-            }
+            restTemplate.exchange(url, HttpMethod.POST, requestEntity, Void.class);
+            log.debug("Хит сохранён: {}", hit);
         } catch (Exception e) {
             log.error("Ошибка при сохранении хита: {}", e.getMessage());
         }
