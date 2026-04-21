@@ -1,0 +1,375 @@
+{
+  "info": {
+    "name": "ExploreWithMe - Comments",
+    "description": "Все тесты.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Публичные эндпоинты",
+      "item": [
+        {
+          "name": "1.1 Получить комментарии к событию (успешно)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/events/1/comments?from=0&size=10"
+          }
+        },
+        {
+          "name": "1.2 Получить комментарии к несуществующему событию (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/events/999/comments"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Приватные эндпоинты (пользователь 1)",
+      "item": [
+        {
+          "name": "2.1 Создать комментарий (успешно)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Has id\", () => pm.expect(pm.response.json()).to.have.property('id'));",
+                  "pm.test(\"Has text\", () => pm.expect(pm.response.json()).to.have.property('text'));",
+                  "pm.test(\"Has authorName\", () => pm.expect(pm.response.json()).to.have.property('authorName'));",
+                  "pm.test(\"Status is PUBLISHED\", () => pm.expect(pm.response.json().status).to.equal('PUBLISHED'));",
+                  "const commentId = pm.response.json().id;",
+                  "pm.collectionVariables.set('commentId', commentId);",
+                  "console.log('Comment ID saved:', commentId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\":\"Отличное мероприятие! Очень понравилось.\"}"
+            },
+            "url": "http://localhost:8080/users/1/events/1/comments"
+          }
+        },
+        {
+          "name": "2.2 Создать комментарий к неопубликованному событию (409 Conflict)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"Error message contains 'неопубликованное'\", () => {",
+                  "  const jsonData = pm.response.json();",
+                  "  pm.expect(jsonData.message).to.include('неопубликованное');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\":\"Этот комментарий не должен создаться\"}"
+            },
+            "url": "http://localhost:8080/users/1/events/21/comments"
+          }
+        },
+        {
+          "name": "2.3 Создать комментарий с пустым текстом (400 Bad Request)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\":\"\"}"
+            },
+            "url": "http://localhost:8080/users/1/events/1/comments"
+          }
+        },
+        {
+          "name": "2.4 Редактировать свой комментарий (успешно)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Text updated\", () => pm.expect(pm.response.json().text).to.include('Обновлённый'));",
+                  "pm.test(\"Has updatedOn field\", () => pm.expect(pm.response.json()).to.have.property('updatedOn'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\":\"Обновлённый комментарий. Действительно крутое событие!\"}"
+            },
+            "url": "http://localhost:8080/users/1/comments/{{commentId}}"
+          }
+        },
+        {
+          "name": "2.5 Редактировать чужой комментарий (403 Forbidden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\":\"Попытка взлома\"}"
+            },
+            "url": "http://localhost:8080/users/2/comments/{{commentId}}"
+          }
+        },
+        {
+          "name": "2.6 Редактировать несуществующий комментарий (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\":\"Текст\"}"
+            },
+            "url": "http://localhost:8080/users/1/comments/99999"
+          }
+        },
+        {
+          "name": "2.7 Удалить свой комментарий (успешно)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:8080/users/1/comments/{{commentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Админские эндпоинты",
+      "item": [
+        {
+          "name": "3.1 Создать новый комментарий для админских тестов",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 201\", () => pm.response.to.have.status(201));",
+                  "const adminCommentId = pm.response.json().id;",
+                  "pm.collectionVariables.set('adminCommentId', adminCommentId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"text\":\"Комментарий для проверки админских функций\"}"
+            },
+            "url": "http://localhost:8080/users/1/events/1/comments"
+          }
+        },
+        {
+          "name": "3.2 Получить все комментарии (админ)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Response is array\", () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/admin/comments?from=0&size=20"
+          }
+        },
+        {
+          "name": "3.3 Получить комментарии с фильтром по событию",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/admin/comments?eventId=1"
+          }
+        },
+        {
+          "name": "3.4 Админ скрывает комментарий (hide)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "url": "http://localhost:8080/admin/comments/{{adminCommentId}}/hide"
+          }
+        },
+        {
+          "name": "3.5 Проверить, что скрытый комментарий не виден в публичном API",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 200\", () => pm.response.to.have.status(200));",
+                  "const comments = pm.response.json();",
+                  "const hiddenComment = comments.find(c => c.id == pm.collectionVariables.get('adminCommentId'));",
+                  "pm.test(\"Hidden comment not visible\", () => pm.expect(hiddenComment).to.be.undefined);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:8080/events/1/comments"
+          }
+        },
+        {
+          "name": "3.6 Админ восстанавливает комментарий (unhide)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "url": "http://localhost:8080/admin/comments/{{adminCommentId}}/unhide"
+          }
+        },
+        {
+          "name": "3.7 Админ удаляет комментарий",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "url": "http://localhost:8080/admin/comments/{{adminCommentId}}"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "commentId",
+      "value": ""
+    },
+    {
+      "key": "adminCommentId",
+      "value": ""
+    }
+  ]
+}
